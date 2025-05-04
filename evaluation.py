@@ -163,6 +163,11 @@ def test_reciprocal_rank():
     assert reciprocal_rank(rank3, docs3) == 0, f'failed test 3'
     print('passed test 3')
 
+    rank4 = [9, 8, 7, 6, 10]
+    docs4 = [9, 8, 7, 6, 10]
+    assert reciprocal_rank(rank4, docs4) == 1, f'failed test 4'
+    print('passed test 4')
+
 def test_reciprocal_rank_k():
     print('testing reciprocal_rank_k:')
 
@@ -209,16 +214,21 @@ def test_get_relevant_docs():
     assert get_relevant_docs(sim_scores1, k_docs1) == [[2], [1], [0]], 'failed test 1'
     print('passed test 1')
 
-    sim_scores1 = np.array([[0.1, 0.2, 0.3], [0.2, 0.4, 0.2], [0.3, 0.3, 0.1]])
-    k_docs1 = 2
-    assert get_relevant_docs(sim_scores1, k_docs1) == [[2, 1], [1, 2], [0, 1]]
+    sim_scores2 = np.array([[0.1, 0.2, 0.3], [0.2, 0.4, 0.2], [0.3, 0.3, 0.1]])
+    k_docs2 = 2
+    assert get_relevant_docs(sim_scores2, k_docs2) == [[2, 1], [1, 2], [0, 1]]
     print('passed test 2')
 
-    sim_scores1 = np.array([[0.3], [0.2], [0.3]])
-    k_docs1 = 1
-    docs1 = get_relevant_docs(sim_scores1, k_docs1)[0]
-    assert 0 in docs1 or 2 in docs1, 'failed test 3'
+    sim_scores3 = np.array([[0.3], [0.2], [0.3]])
+    k_docs3 = 1
+    docs3 = get_relevant_docs(sim_scores3, k_docs3)[0]
+    assert 0 in docs3 or 2 in docs3, 'failed test 3'
     print('passed test 3')
+
+    sim_scores4 = np.array([[0.1, 0.2, 0.3], [0.2, 0.4, 0.2], [0.3, 0.3, 0.1]])
+    k_docs4 = 3
+    assert get_relevant_docs(sim_scores4, k_docs4) == [[2, 1, 0], [1, 2, 0], [0, 1, 2]], 'failed test 4'
+    print('passed test 4')
 
 
 def test_precision_k():

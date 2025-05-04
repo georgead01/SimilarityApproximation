@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from evaluation import mean_reciprocal_rank_k, get_relevant_docs
+from evaluation import mean_reciprocal_rank_k, get_relevant_docs, mean_avg_precision_k
 
 r_vals = [50, 100, 150, 200, 250]
 
@@ -29,10 +29,11 @@ target = data.T@queries
 full_time = time.time()-start_time
 print(f'full time: {full_time} sec')
 
-k_docs = 100
+k_docs = n
 rel_docs = get_relevant_docs(target, k_docs)
 
 mrr = {r: [] for r in r_vals}
+map = {r: [] for r in r_vals}
 times = {r: 0 for r in r_vals}
 for r in r_vals:
     LT = np.load(f'compressed/LT_{r}.npy')
@@ -59,11 +60,20 @@ for r in r_vals:
         #     docs = np.nonzero(target[:, q_idx].argsort(axis = 0) >= n-k_docs)[0]
         #     rel_docs.append(docs)
         mrr_k = mean_reciprocal_rank_k(rankings, rel_docs, k)
+        map_k = mean_avg_precision_k(rankings, rel_docs, k)
         print(f'k: {k}, MRR @ k = {mrr_k}')
+        print(f'k: {k}, MAP @ k = {map_k}')
         mrr[r].append(mrr_k)
+        map[r].append(map_k)
     
 plt.title(f'MRR @ k vs. k')
 for r in r_vals:
     plt.plot([i*5 for i in range(1, 20)], mrr[r], label = f'r = {r}')
+plt.legend()
+plt.show()
+
+plt.title(f'MAP @ k vs. k')
+for r in r_vals:
+    plt.plot([i*5 for i in range(1, 20)], map[r], label = f'r = {r}')
 plt.legend()
 plt.show()

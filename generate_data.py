@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 d = 300
-n = 5000
+n = 1000
 
 data = np.random.normal(0, 1, (d, n))
 data /= np.linalg.norm(data, axis = 0)
