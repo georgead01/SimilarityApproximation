@@ -98,6 +98,17 @@ def avg_precision_k(ranking, relevant_docs, k):
         return 0
     return avg_p/count
 
+def mean_precision_k(rankings, relevant_docs, k):
+    num_queries = len(rankings)
+    assert len(relevant_docs) == num_queries, 'rankings and relevant_docs must be of the same length'
+
+    mp = 0
+    for idx in range(num_queries):
+        mp += precision_k(rankings[idx], relevant_docs[idx], k)
+
+    mp /= num_queries
+    return mp
+
 def mean_avg_precision_k(rankings, relevant_docs, k):
     '''
     Computes the Mean Average Precision @ k for a ranking given the indices relevant documents.

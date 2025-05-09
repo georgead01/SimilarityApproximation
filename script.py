@@ -29,7 +29,7 @@ target = data.T@queries
 full_time = time.time()-start_time
 print(f'full time: {full_time} sec')
 
-k_docs = n
+k_docs = n//100
 rel_docs = get_relevant_docs(target, k_docs)
 
 mrr = {r: [] for r in r_vals}
@@ -52,7 +52,7 @@ for r in r_vals:
     print(f'r = {r}, relative time: {rel_time}, time: {exec_time} sec')
 
     rankings = get_relevant_docs(output, k_docs)
-    for k in [i*5 for i in range(1, 20)]:
+    for k in [i*5 for i in range(1, 21)]:
         # for q_idx in range(num_quereis):
         #     ranked = list(np.nonzero(output[:, q_idx].argsort(axis = 0) >= n-k)[0])
         #     ranked.sort(key=lambda doc: output[doc][q_idx], reverse=True)
@@ -65,15 +65,29 @@ for r in r_vals:
         print(f'k: {k}, MAP @ k = {map_k}')
         mrr[r].append(mrr_k)
         map[r].append(map_k)
+
+k_vals = [i*5 for i in range(1, 21)]
+probs = [1]
+mrr_bench = []
+
+for k in k_vals:
+    bench = 0
+    for i in range(1, k+1):
+        prob = probs[i-1]
+        probs.append(prob*(1-k_docs/(n-i+1)))
+        bench += (1/i)*prob*(k_docs/(n-i+1))
+    mrr_bench.append(bench)
     
 plt.title(f'MRR @ k vs. k')
+plt.plot(k_vals, mrr_bench, 'r--', label = 'benchmark')
 for r in r_vals:
-    plt.plot([i*5 for i in range(1, 20)], mrr[r], label = f'r = {r}')
+    plt.plot(k_vals, mrr[r], label = f'r = {r}')
 plt.legend()
 plt.show()
 
-plt.title(f'MAP @ k vs. k')
+plt.title(f'Precision @ k vs. k')
+plt.hlines(k_docs/n, 0, max(k_vals), 'r', '--', label = 'benchmark')
 for r in r_vals:
-    plt.plot([i*5 for i in range(1, 20)], map[r], label = f'r = {r}')
+    plt.plot(k_vals, map[r], label = f'r = {r}')
 plt.legend()
 plt.show()

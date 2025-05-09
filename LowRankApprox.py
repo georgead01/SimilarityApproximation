@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from evaluation import mean_reciprocal_rank_k, get_relevant_docs, mean_avg_precision_k
+from evaluation import mean_reciprocal_rank_k, get_relevant_docs, mean_avg_precision_k, mean_precision_k
 
 class LowRankApprox(nn.Module):
     def __init__(self, d, n, rank):
@@ -11,6 +11,7 @@ class LowRankApprox(nn.Module):
         self.V = nn.Linear(rank, n, bias=False)
         nn.init.normal_(self.U.weight, mean=0, std=1.0)
         nn.init.normal_(self.V.weight, mean=0, std=1.0)
+        self.activation = nn.Softmax()
 
     def forward(self, x):
         return self.V(self.U(x))
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     #r_vals = [300]
     #r_vals = [10, 50, 100, 500, 1000, 1500]
 
-    k_docs = 1000
+    k_docs = n//100
     rank_target = data.T@queries
     rel_docs = get_relevant_docs(rank_target, k_docs)
 
@@ -49,23 +50,25 @@ if __name__ == '__main__':
         scheduler =torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.9)
         
         #loss_fn = nn.MultiLabelMarginLoss()
-        #loss_fn = nn.CrossEntropyLoss(reduction='sum')
+        loss_fn = nn.CrossEntropyLoss(reduction='sum')
         #loss_fn = nn.MSELoss(reduction='sum')
-        loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
+        #loss_fn = nn.BCEWithLogitsLoss(reduction='sum')
 
         #target = torch.from_numpy(data.T).float()@train_queries
         target = torch.from_numpy(data.T).float()
         #print(target.shape)
-        #target = torch.from_numpy(data.T).float().argsort(dim = 0)
+        #target = torch.from_numpy(data.T).argsort(dim = 0)
 
         epochs = 1000
         for epoch in range(epochs):
             #output = model(train_queries.T)
             optimizer.zero_grad()
+            # output =
             output = model(torch.from_numpy(np.eye(d)).float())
             #print(output.shape)
             #loss = loss_fn(output.argsort(dim = 1), target.T)
-            loss = loss_fn(output.T, target)
+            #print(output.shape)
+            loss = loss_fn(output, target.T)
             loss.backward()
             optimizer.step()
             scheduler.step()
@@ -104,7 +107,7 @@ if __name__ == '__main__':
             #     docs = np.nonzero(target[:, q_idx].argsort(axis = 0) >= n-k_docs)[0]
             #     rel_docs.append(docs)
             mrr_k = mean_reciprocal_rank_k(rankings, rel_docs, k)
-            map_k = mean_avg_precision_k(rankings, rel_docs, k)
+            map_k = mean_precision_k(rankings, rel_docs, k)
             # mrr_k = 0
             print(f'k: {k}, MRR @ k = {mrr_k}')
             mrrs[r].append(mrr_k)
@@ -117,15 +120,29 @@ if __name__ == '__main__':
     #plt.plot(r_vals, errs)
     #plt.legend()
     #plt.show()
+
+    k_vals = [i*5 for i in range(1, 21)]
+    probs = [1]
+    mrr_bench = []
+
+    for k in k_vals:
+        bench = 0
+        for i in range(1, k+1):
+            prob = probs[i-1]
+            probs.append(prob*(1-k_docs/(n-i+1)))
+            bench += (1/i)*prob*(k_docs/(n-i+1))
+        mrr_bench.append(bench)
     
     plt.title(f'MRR @ k vs. k')
+    plt.plot(k_vals, mrr_bench, 'r--', label = 'benchmark')
     for r in r_vals:
-        plt.plot(mrrs[r], label = f'r = {r}')
+        plt.plot(k_vals, mrrs[r], label = f'r = {r}')
     plt.legend()
     plt.show()
 
-    plt.title(f'MAP @ k vs. k')
+    plt.title(f'Precision @ k vs. k')
+    plt.hlines(k_docs/n, 0, max(k_vals), 'r', '--', label = 'benchmark')
     for r in r_vals:
-        plt.plot(maps[r], label = f'r = {r}')
+        plt.plot(k_vals, maps[r], label = f'r = {r}')
     plt.legend()
     plt.show()
